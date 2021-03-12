@@ -3,7 +3,7 @@
 	"displayName": "Extension Settings Opener",
 	"description": "Open extension settings for any extension",
 	"publisher": "manhen",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"icon": "images/gear.png",
 	"repository": {
 		"type": "git",
@@ -47,6 +47,7 @@
 		]
 	},
 	"scripts": {
+		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -p ./",
 		"lint": "eslint src --ext ts",
 		"watch": "tsc -watch -p ./"
