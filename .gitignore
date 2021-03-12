@@ -1,0 +1,11 @@
+out
+node_modules
+.vscode-test/
+*.vsix
+.vscode
+*.svg
+
+*.tmp
+*.temp
+tmp.*
+temp.*
