@@ -61,7 +61,10 @@ async function openExtensionSettings() {
 		updateQuickPick();
 	});
 	const qpPromise = new Promise<string | undefined>(resolve => {
-		qp.onDidAccept(() => resolve(qp.selectedItems[0].id));
+		qp.onDidAccept(() => {
+			resolve(qp.selectedItems[0].id);
+			qp.dispose();
+		});
 	});
 
 	updateQuickPick();
