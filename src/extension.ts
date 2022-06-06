@@ -6,35 +6,65 @@ export function activate(context: vscode.ExtensionContext) {
 	}));
 }
 
-interface QuickPickItemWithId extends vscode.QuickPickItem {
-	id: string
-}
+interface QuickPickExt extends vscode.QuickPickItem, ExtensionInfo {}
 
 async function openExtensionSettings() {
-	const extList = vscode.extensions.all;
+	
+	//todo: handle these:
 	const config = vscode.workspace.getConfiguration('extensionSettingsOpener');
-	const extInfos = parseExtList(
-		extList,
-		config.get('showExtensionsWithoutConfig', false),
-		config.get('showInternalExtensions', false)
-	);
-	const qpOptions: vscode.QuickPickOptions = {
-		matchOnDescription: true
-	};
-	const qpItems = extInfos.map((ext) => (<QuickPickItemWithId>{
+	let showEmptyExtensions = config.get('showExtensionsWithoutConfig', false);
+	let showInternalExtensions = config.get('showInternalExtensions', false);
+
+	const extInfos = parseExtList();
+
+	const qpItems = extInfos.map((ext) => (<QuickPickExt>{
+		...ext,
 		label: ext.name,
 		description: ext.id,
 		detail: ext.detail,
-		id: ext.id
 	}));
 	
-	const qp = vscode.window.createQuickPick<QuickPickItemWithId>();
-	qp.items = qpItems;
+	const btnShowInternal = makeButton('folder', 'Show internal extensions');
+	const btnHideInternal = makeButton('folder-opened', 'Hide internal extensions');
+	const btnShowEmpty = makeButton('bracket-error', 'Show empty configurations');
+	const btnHideEmpty = makeButton('bracket', 'Hide empty configurations');
+	
+	const qp = vscode.window.createQuickPick<QuickPickExt>();
 	qp.matchOnDescription = true;
 	qp.canSelectMany = false;
+	qp.keepScrollPosition = true;
+
+	function updateQuickPick() {
+		qp.buttons = [
+			showInternalExtensions ? btnHideInternal : btnShowInternal,
+			showEmptyExtensions ? btnHideEmpty : btnShowEmpty
+		];
+		let newItems = qpItems;
+		if(!showInternalExtensions){
+			newItems = newItems.filter(ei => !ei.isInternal);
+		}
+		if(!showEmptyExtensions){
+			newItems = newItems.filter(ei => ei.hasConfig);
+		}
+		qp.items = newItems;
+	}
+	qp.onDidTriggerButton(e => {
+		if(e.tooltip === btnShowInternal.tooltip){
+			showInternalExtensions = true;
+		} else if(e.tooltip === btnHideInternal.tooltip){
+			showInternalExtensions = false;
+		} else if(e.tooltip === btnHideEmpty.tooltip){
+			showEmptyExtensions = false;
+		} else if(e.tooltip === btnShowEmpty.tooltip){
+			showEmptyExtensions = true;
+		}
+		updateQuickPick();
+	});
 	const qpPromise = new Promise<string | undefined>(resolve => {
 		qp.onDidAccept(() => resolve(qp.selectedItems[0].id));
 	});
+
+	updateQuickPick();
 	qp.show();
 	
 	const id: string | undefined = await qpPromise;
@@ -43,21 +73,27 @@ async function openExtensionSettings() {
 	}
 }
 
+function makeButton(iconId: string, tooltip?: string): vscode.QuickInputButton{
+	return {
+		iconPath: new vscode.ThemeIcon(iconId),
+		tooltip: tooltip
+	};
+}
+
 interface ExtensionInfo {
 	id: string;
 	publisher: string;
 	name: string;
 	hasConfig: boolean;
+	isInternal: boolean;
 	detail?: string;
 }
 
-function parseExtList(exts: readonly vscode.Extension<any>[], showMissingConfigs: boolean = false, showInternal: boolean = false) {
+function parseExtList() {
+	const exts = vscode.extensions.all;
 	let extInfos = exts
 		.map(parseExt)
-		.filter((ei) => ei.hasConfig || showMissingConfigs)
-		.filter((ei) => ei.publisher !== 'vscode' || showInternal)
 		.sort((a,b) => a.name.localeCompare(b.name));
-
 	return extInfos;
 }
 
@@ -72,6 +108,7 @@ function parseExt(ext: vscode.Extension<any>): ExtensionInfo {
 		publisher: publisher,
 		name: name,
 		hasConfig: hasConfig,
+		isInternal: publisher === 'vscode',
 		detail: detail
 	};
 	return ret;
