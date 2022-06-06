@@ -6,6 +6,10 @@ export function activate(context: vscode.ExtensionContext) {
 	}));
 }
 
+interface QuickPickItemWithId extends vscode.QuickPickItem {
+	id: string
+}
+
 async function openExtensionSettings() {
 	const extList = vscode.extensions.all;
 	const config = vscode.workspace.getConfiguration('extensionSettingsOpener');
@@ -17,15 +21,25 @@ async function openExtensionSettings() {
 	const qpOptions: vscode.QuickPickOptions = {
 		matchOnDescription: true
 	};
-	const qpItems = extInfos.map((ext) => (<vscode.QuickPickItem & {id: string}>{
+	const qpItems = extInfos.map((ext) => (<QuickPickItemWithId>{
 		label: ext.name,
 		description: ext.id,
 		detail: ext.detail,
 		id: ext.id
 	}));
-	const qp = await vscode.window.showQuickPick(qpItems, qpOptions);
-	if(qp){
-		vscode.commands.executeCommand('workbench.action.openSettings', `@ext:${qp.id}`);
+	
+	const qp = vscode.window.createQuickPick<QuickPickItemWithId>();
+	qp.items = qpItems;
+	qp.matchOnDescription = true;
+	qp.canSelectMany = false;
+	const qpPromise = new Promise<string | undefined>(resolve => {
+		qp.onDidAccept(() => resolve(qp.selectedItems[0].id));
+	});
+	qp.show();
+	
+	const id: string | undefined = await qpPromise;
+	if(id){
+		vscode.commands.executeCommand('workbench.action.openSettings', `@ext:${id}`);
 	}
 }
 
