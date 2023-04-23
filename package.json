@@ -28,6 +28,15 @@
 				"category": "Extensions"
 			}
 		],
+		"menus": {
+		    "editor/title": [
+			{
+			    "command": "extensionSettingsOpener.openExtensionSettings",
+			    "group": "navigation",
+			    "when": "activeEditor == workbench.editor.settings2"
+			}
+		    ]
+		},
 		"configuration": [
 			{
 				"type": "object",
