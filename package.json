@@ -25,7 +25,8 @@
 			{
 				"command": "extensionSettingsOpener.openExtensionSettings",
 				"title": "Open Extension Settings",
-				"category": "Extensions"
+				"category": "Extensions",
+				"icon": "$(extensions)"
 			}
 		],
 		"menus": {
