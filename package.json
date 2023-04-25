@@ -3,7 +3,7 @@
 	"displayName": "Extension Settings Opener",
 	"description": "Open extension settings for any extension",
 	"publisher": "manhen",
-	"version": "0.0.5",
+	"version": "0.0.6",
 	"license": "MIT",
 	"icon": "images/gear.png",
 	"repository": {
